@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import bodyParser from "body-parser";
 import {errorHandlerMiddleware} from "./middlewares/error.middleware";
 import UsersRouter from "./controllers/users";
+import PostRouter from "./controllers/posts";
 
 const app: Express = express();
 app.use(bodyParser.json());
@@ -15,6 +16,7 @@ app.get("/", (_req: Request, res: Response, _next: NextFunction) => {
 
 app.use(UsersRouter);
 
+app.use(PostRouter);
 
 app.use((_req: Request, _res: Response, _next: NextFunction) => {
     console.log(Math.random(), "Middleware for route not found")

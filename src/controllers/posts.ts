@@ -3,11 +3,11 @@ import validator from "validator";
 import isEmpty = validator.isEmpty;
 import {HttpException} from "../exceptions/HttpException";
 import Post, {IPostDocument} from "../models/Post";
-import {UNPROCESSABLE_ENTITY, /*UNAUTHORIZED*/} from "http-status-codes";
+import {UNPROCESSABLE_ENTITY, UNAUTHORIZED} from "http-status-codes";
 import checkAuthMiddleware from "../middlewares/check-auth.middleware";
-// import {checkBody} from "../utils/validators/users.validator";
-// import {throwPostNotFoundError} from "../utils/throwable/throwError";
-// import {IUserDocument} from "../models/User";
+import {checkBody} from "../utils/validators/users.validator";
+import {throwPostNotFoundError} from "../utils/throwable/throwError";
+import {IUserDocument} from "../models/User";
 
 const router = Router();
 /**
@@ -75,122 +75,125 @@ router.post("/post", checkAuthMiddleware, async (req: Request, res: Response, ne
     }
 });
 
-// const likePost = async (
-//     req: Request,
-//     res: Response,
-//     next: NextFunction
-// ): Promise<void> => {
-//     try {
-//         const {id} = req.params;
-//         const user = req.currentUser as IUserDocument;
-//         const post = await Post.findById(id);
-//         if (post) {
-//             if (post.likes.find(like => like.username === user.username)) {
-//                 post.likes = post.likes.filter(like => like.username !== user.username);
-//             } else {
-//                 post.likes.push({
-//                     username: user.username,
-//                     createdAt: new Date().toISOString()
-//                 })
-//             }
-//             await post.save();
-//             res.json({
-//                 success: true,
-//                 data: {
-//                     post
-//                 }
-//             })
-//         } else {
-//             throwPostNotFoundError();
-//         }
-//     } catch (e) {
-//         next(e)
-//     }
-// }
-//
-// const deletePost = async (
-//     req: Request,
-//     res: Response,
-//     next: NextFunction
-// ): Promise<void> => {
-//     try {
-//         const {id} = req.params;
-//
-//         const post = await Post.findById(id);
-//
-//         const user = req.currentUser as IUserDocument;
-//
-//         if (post) {
-//             if (post.username === user.username) {
-//                 await Post.findByIdAndDelete(id);
-//
-//                 res.json({
-//                     success: true,
-//                     data: {message: "deleted successfully"}
-//                 });
-//             } else {
-//                 throw new HttpException(UNAUTHORIZED, "Action not allowed");
-//             }
-//         } else {
-//             throwPostNotFoundError();
-//         }
-//     } catch (error) {
-//         next(error);
-//     }
-// }
-//
-// const updatePost = async (
-//     req: Request,
-//     res: Response,
-//     next: NextFunction
-// ): Promise<void> => {
-//     try {
-//         const {id} = req.params;
-//         const {body} = req.body;
-//         checkBody(body);
-//         const post = await Post.findById(id);
-//         if (post) {
-//             const user = req.currentUser as IUserDocument;
-//             if (post.username === user.username) {
-//                 const updatedPost = await Post.findByIdAndUpdate(id, {body}, {new: true});
-//                 res.json({
-//                     success: true,
-//                     data: {
-//                         post: updatedPost
-//                     }
-//                 })
-//             } else {
-//                 throw new HttpException(UNAUTHORIZED, "Action not allowed");
-//             }
-//         } else {
-//             throwPostNotFoundError();
-//         }
-//     } catch (e) {
-//         next(e);
-//     }
-// }
 
-// const getPost = async (
-//     req: Request,
-//     res: Response,
-//     next: NextFunction
-// ): Promise<void> => {
-//     try {
-//         const {id} = req.params;
-//         const post = await Post.findById(id);
-//         if (post) {
-//             res.json({
-//                 success: true,
-//                 data: {
-//                     post
-//                 }
-//             })
-//         } else {
-//             throwPostNotFoundError();
-//         }
-//     } catch (error) {
-//         next(error);
-//     }
-// }
+router.post("/post/:id/like", checkAuthMiddleware, async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        const {id} = req.params;
+        const user = req.currentUser as IUserDocument;
+        const post = await Post.findById(id);
+        if (post) {
+            if (post.likes.find(like => like.username === user.username)) {
+                post.likes = post.likes.filter(like => like.username !== user.username);
+            } else {
+                post.likes.push({
+                    username: user.username,
+                    createdAt: new Date().toISOString()
+                })
+            }
+            await post.save();
+            res.json({
+                success: true,
+                data: {
+                    post
+                }
+            })
+        } else {
+            throwPostNotFoundError();
+        }
+    } catch (e) {
+        next(e)
+    }
+});
+
+router.post("post/:id/delete", checkAuthMiddleware, async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        const {id} = req.params;
+
+        const post = await Post.findById(id);
+
+        const user = req.currentUser as IUserDocument;
+
+        if (post) {
+            if (post.username === user.username) {
+                await Post.findByIdAndDelete(id);
+
+                res.json({
+                    success: true,
+                    data: {message: "deleted successfully"}
+                });
+            } else {
+                throw new HttpException(UNAUTHORIZED, "Action not allowed");
+            }
+        } else {
+            throwPostNotFoundError();
+        }
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.post("post/:id/update", checkAuthMiddleware, async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        const {id} = req.params;
+        const {body} = req.body;
+        checkBody(body);
+        const post = await Post.findById(id);
+        if (post) {
+            const user = req.currentUser as IUserDocument;
+            if (post.username === user.username) {
+                const updatedPost = await Post.findByIdAndUpdate(id, {body}, {new: true});
+                res.json({
+                    success: true,
+                    data: {
+                        post: updatedPost
+                    }
+                })
+            } else {
+                throw new HttpException(UNAUTHORIZED, "Action not allowed");
+            }
+        } else {
+            throwPostNotFoundError();
+        }
+    } catch (e) {
+        next(e);
+    }
+});
+
+router.get("post/:id", async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        const {id} = req.params;
+        const post = await Post.findById(id);
+        if (post) {
+            res.json({
+                success: true,
+                data: {
+                    post
+                }
+            })
+        } else {
+            throwPostNotFoundError();
+        }
+    } catch (error) {
+        next(error);
+    }
+});
+
+
 
 export default router;
