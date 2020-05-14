@@ -1,14 +1,43 @@
 import {NextFunction, Request, Response, Router} from "express";
-import {validatePostRegister, RegisterInputError} from "../utils/validators/users.validator";
+import {validatePostRegister, RegisterInputError, validatePostLogin} from "../utils/validators/users.validator";
 import {HttpException} from "../exceptions/HttpException";
-import {UNPROCESSABLE_ENTITY, OK} from "http-status-codes";
+import {UNPROCESSABLE_ENTITY, OK, NOT_FOUND} from "http-status-codes";
 import User, {IUserDocument} from "../models/User";
 import {rebuildMongooseErrorHandler} from "../utils/convertor/Convertor";
+import bcrypt from "bcrypt";
+
 
 const router: Router = Router();
 
+router.post("/users/login", async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const {username, password} = req.body;
+        const {valid, errors} = validatePostLogin(username, password);
+        if (!valid) {
+            throw new HttpException(UNPROCESSABLE_ENTITY, "校验不通过", errors);
+        }
+        const user = await User.findOne({username});
+        if (!user) {
+            throw new HttpException(NOT_FOUND, "用户不存在");
+        }
+        const match = await bcrypt.compare(password, user!.password);
+        if (!match) {
+            errors.general = "密码错误"
+            throw new HttpException(UNPROCESSABLE_ENTITY, "校验不通过", errors);
+        }
+        const token = user.generateToken();
+        res.json({
+            success: true,
+            data: {
+                token
+            }
+        })
+    } catch (e) {
+        next(e);
+    }
+})
 
-router.post("/users/register", async function (req: Request, res: Response, next: NextFunction) {
+router.post("/users/register", async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const {username, password, confirmPassword, email} = req.body;
         const {valid, errors} = validatePostRegister(username, password, confirmPassword, email);

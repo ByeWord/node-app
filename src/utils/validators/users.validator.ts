@@ -2,17 +2,30 @@ import validator from "validator";
 import isEmpty = validator.isEmpty;
 import {HttpException} from "../../exceptions/HttpException";
 import {UNPROCESSABLE_ENTITY} from "http-status-codes";
+import {IUserDocument} from "../../models/User";
 
 export interface LoginInputError {
     username?: string;
     password?: string;
     email?: string;
+    general?: string;
 }
 
 export function validatePostLogin(
-    
+    username: IUserDocument["username"],
+    password: IUserDocument["password"]
 ) {
+    let errors: LoginInputError = {};
 
+    if (isEmpty(username.trim())) {
+        errors.username = "Username must not be empty";
+    }
+
+    if (isEmpty(password.trim())) {
+        errors.password = "Password must not be empty";
+    }
+
+    return {errors, valid: Object.keys(errors).length < 1};
 }
 
 export interface RegisterInputError {
